@@ -438,4 +438,4 @@ with tab3:
                 st.error(traceback.format_exc())
 
 st.markdown("---")
-st.markdown("📝 **Note:** This application uses IMA/DICOM files for medical image quality metrics calculation..")
+st.markdown("📝 **Note:** This application uses IMA/DICOM files for medical image quality metrics calculation.")
