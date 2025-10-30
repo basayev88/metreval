@@ -67,17 +67,24 @@ with st.sidebar:
     st.header("📖 Usage Guide")
     st.markdown("""
     **Steps:**
-    1. Upload a ZIP folder containing IMA/DICOM files
-    2. Pilih metrik yang ingin dihitung
-    3. Klik tombol "Hitung Metrik"
-    4. Unduh hasil perhitungan
+    1. Select upload method (ZIP or Individual Files)
+    2. Upload ZIP files or IMA/DICOM files individually
+    3. Select the metric you want to calculate
+    4. Click the "Calculate Metrics" button
+    5. Download the calculation results
 
-    **Format File:**
-    - Format: .IMA atau .dcm (DICOM)
-    - Folder: Clean, Noisy, Denoised
-    - Pastikan jumlah file sama di setiap folder
+    **File Format:**
+    - Format: .IMA or .dcm (DICOM)
+    - Option 1: Upload ZIP file (for large batches)
+    - Option 2: Upload individual files (for flexibility)
 
-    **Metrik yang tersedia:**
+    **Folders for individual files:**
+    - Clean: Reference images
+    - Noisy: Noisy images
+    - Denoised: Denoised images
+    - Make sure the number and name of files is the same in each category.
+
+    **Available metrics:**
     - MSE (Mean Squared Error)
     - PSNR (Peak Signal-to-Noise Ratio)
     - SSIM (Structural Similarity Index)
@@ -87,35 +94,104 @@ with st.sidebar:
     """)
 
 # Main content
-tab1, tab2, tab3 = st.tabs(["📤 Upload Data", "⚙️ Pengaturan", "📊 Hasil"])
+tab1, tab2, tab3 = st.tabs(["📤 Upload Data", "⚙️ Settings", "📊 Results"])
 
 with tab1:
-    st.subheader("Upload Folder Citra")
-    col1, col2, col3 = st.columns(3)
+    st.subheader("Upload Image Folder")
 
-    with col1:
-        clean_zip = st.file_uploader(
-            "Upload Clean Images (ZIP)",
-            type=['zip'],
-            help="Upload file ZIP berisi citra clean"
-        )
+    # Choose upload method
+    upload_method = st.radio(
+        "Select upload method:",
+        ["📦 Upload ZIP Files", "📁 Upload Individual Files"],
+        horizontal=True
+    )
 
-    with col2:
-        noisy_zip = st.file_uploader(
-            "Upload Noisy Images (ZIP)",
-            type=['zip'],
-            help="Upload file ZIP berisi citra noisy"
-        )
+    if upload_method == "📦 Upload ZIP Files":
+        st.markdown("#### Method 1: Upload ZIP File")
+        col1, col2, col3 = st.columns(3)
 
-    with col3:
-        denoised_zip = st.file_uploader(
-            "Upload Denoised Images (ZIP)",
-            type=['zip'],
-            help="Upload file ZIP berisi citra denoised"
-        )
+        with col1:
+            clean_zip = st.file_uploader(
+                "Upload Clean Images (ZIP)",
+                type=['zip'],
+                key='clean_zip',
+                help="Upload a ZIP file containing the clean image"
+            )
+
+        with col2:
+            noisy_zip = st.file_uploader(
+                "Upload Noisy Images (ZIP)",
+                type=['zip'],
+                key='noisy_zip',
+                help="Upload a ZIP file containing the noisy image."
+            )
+
+        with col3:
+            denoised_zip = st.file_uploader(
+                "Upload Denoised Images (ZIP)",
+                type=['zip'],
+                key='denoised_zip',
+                help="Upload a ZIP file containing the denoised image."
+            )
+
+        upload_data = {
+            'method': 'zip',
+            'clean_zip': clean_zip,
+            'noisy_zip': noisy_zip,
+            'denoised_zip': denoised_zip,
+            'clean_files': None,
+            'noisy_files': None,
+            'denoised_files': None
+        }
+
+    else:
+        st.markdown("#### Method 2: Upload Individual Files")
+        st.info("💡 Tip: You can select multiple files at once with Ctrl+Click or Cmd+Click")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown("**🟢 Clean Images**")
+            clean_files = st.file_uploader(
+                "Upload Clean image (IMA/DICOM)",
+                type=['ima', 'dcm'],
+                accept_multiple_files=True,
+                key='clean_files_upload',
+                help="Upload one or more clean image files"
+            )
+
+        with col2:
+            st.markdown("**🔴 Noisy Images**")
+            noisy_files = st.file_uploader(
+                "Upload Noisy image (IMA/DICOM)",
+                type=['ima', 'dcm'],
+                accept_multiple_files=True,
+                key='noisy_files_upload',
+                help="Upload one or more noisy image files"
+            )
+
+        with col3:
+            st.markdown("**🔵 Denoised Images**")
+            denoised_files = st.file_uploader(
+                "Upload Denoised image (IMA/DICOM)",
+                type=['ima', 'dcm'],
+                accept_multiple_files=True,
+                key='denoised_files_upload',
+                help="Upload one or more denoised image files"
+            )
+
+        upload_data = {
+            'method': 'individual',
+            'clean_zip': None,
+            'noisy_zip': None,
+            'denoised_zip': None,
+            'clean_files': clean_files,
+            'noisy_files': noisy_files,
+            'denoised_files': denoised_files
+        }
 
 with tab2:
-    st.subheader("Pilih Metrik yang Ingin Dihitung")
+    st.subheader("Select the Metrics You Want to Calculate")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -128,10 +204,10 @@ with tab2:
         calc_fid = st.checkbox("FID (Fréchet Inception Distance)", value=False)
         calc_vif = st.checkbox("VIF (Visual Information Fidelity)", value=False)
 
-    st.info("⚠️ Catatan: FID memerlukan waktu komputasi yang lama dan memori yang besar")
+    st.info("⚠️ Note: FID requires long computation time and large memory.")
 
     if calc_mahalanobis:
-        patch_size = st.slider("Ukuran Patch untuk Mahalanobis Distance", 8, 64, 32, 8)
+        patch_size = st.slider("Patch Size for Mahalanobis Distance", 8, 64, 32, 8)
     else:
         patch_size = 32
 
@@ -146,8 +222,8 @@ def extract_zip(zip_file):
     return temp_dir
 
 @st.cache_data
-def load_dicom_images(folder_path):
-    """Load DICOM/IMA images from folder"""
+def load_dicom_from_zip(folder_path):
+    """Load DICOM/IMA images from ZIP folder"""
     images = []
     filenames = []
 
@@ -168,6 +244,30 @@ def load_dicom_images(folder_path):
             filenames.append(os.path.basename(file_path))
         except Exception as e:
             st.warning(f"Error loading {os.path.basename(file_path)}: {e}")
+            continue
+
+    return images, filenames
+
+def load_dicom_from_files(uploaded_files):
+    """Load DICOM/IMA images from uploaded files"""
+    images = []
+    filenames = []
+
+    if not uploaded_files:
+        return images, filenames
+
+    for uploaded_file in uploaded_files:
+        try:
+            # Read file into bytes
+            file_bytes = uploaded_file.read()
+
+            # Try to read as DICOM
+            ds = pydicom.dcmread(io.BytesIO(file_bytes))
+            img = ds.pixel_array.astype(np.float32)
+            images.append(img)
+            filenames.append(uploaded_file.name)
+        except Exception as e:
+            st.warning(f"Error loading {uploaded_file.name}: {e}")
             continue
 
     return images, filenames
@@ -375,82 +475,119 @@ def calculate_vif_metric(clean_imgs, noisy_imgs, denoised_imgs, filenames):
 
 # Main calculation
 with tab3:
-    if st.button("🚀 Hitung Metrik", type="primary", use_container_width=True):
-        if not (clean_zip and noisy_zip and denoised_zip):
-            st.error("⚠️ Mohon upload semua folder (Clean, Noisy, Denoised)")
-        else:
-            try:
-                st.info("📂 Extracting ZIP files...")
-                clean_dir = extract_zip(clean_zip)
-                noisy_dir = extract_zip(noisy_zip)
-                denoised_dir = extract_zip(denoised_zip)
+    if st.button("🚀 Calculate Metrics", type="primary", use_container_width=True):
 
-                st.info("🖼️ Loading images...")
-                clean_imgs, clean_files = load_dicom_images(clean_dir)
-                noisy_imgs, noisy_files = load_dicom_images(noisy_dir)
-                denoised_imgs, denoised_files = load_dicom_images(denoised_dir)
+        # Check which method was used
+        if upload_data['method'] == 'zip':
+            clean_zip = upload_data['clean_zip']
+            noisy_zip = upload_data['noisy_zip']
+            denoised_zip = upload_data['denoised_zip']
 
-                if len(clean_imgs) == 0 or len(noisy_imgs) == 0 or len(denoised_imgs) == 0:
-                    st.error("❌ Tidak ada file IMA/DICOM yang valid ditemukan")
-                elif len(clean_imgs) != len(noisy_imgs) or len(clean_imgs) != len(denoised_imgs):
-                    st.error(f"❌ Jumlah file tidak sama: Clean={len(clean_imgs)}, Noisy={len(noisy_imgs)}, Denoised={len(denoised_imgs)}")
-                else:
-                    st.success(f"✅ Berhasil memuat {len(clean_imgs)} gambar dari setiap folder")
+            if not (clean_zip and noisy_zip and denoised_zip):
+                st.error("⚠️ Please upload all ZIP files (Clean, Noisy, Denoised)")
+            else:
+                try:
+                    st.info("📂 Extracting ZIP files...")
+                    clean_dir = extract_zip(clean_zip)
+                    noisy_dir = extract_zip(noisy_zip)
+                    denoised_dir = extract_zip(denoised_zip)
 
-                    all_results = {}
+                    st.info("🖼️ Loading images from ZIP...")
+                    clean_imgs, clean_files = load_dicom_from_zip(clean_dir)
+                    noisy_imgs, noisy_files = load_dicom_from_zip(noisy_dir)
+                    denoised_imgs, denoised_files = load_dicom_from_zip(denoised_dir)
 
-                    # Calculate MSE, PSNR, SSIM
-                    if calc_mse or calc_psnr or calc_ssim:
-                        st.info("📊 Menghitung MSE, PSNR, SSIM...")
-                        df_basic = calculate_mse_psnr_ssim(clean_imgs, noisy_imgs, denoised_imgs, clean_files)
-                        all_results['Basic Metrics'] = df_basic
-                        st.success("✅ MSE, PSNR, SSIM selesai dihitung")
-                        st.dataframe(df_basic, use_container_width=True)
+                    if len(clean_imgs) == 0 or len(noisy_imgs) == 0 or len(denoised_imgs) == 0:
+                        st.error("❌ No valid IMA/DICOM files found")
+                    elif len(clean_imgs) != len(noisy_imgs) or len(clean_imgs) != len(denoised_imgs):
+                        st.error(f"❌ Number or file names are not the same: Clean={len(clean_imgs)}, Noisy={len(noisy_imgs)}, Denoised={len(denoised_imgs)}")
+                    else:
+                        st.success(f"✅ Successfully loaded {len(clean_imgs)} images from each folder")
+                        perform_calculations(clean_imgs, noisy_imgs, denoised_imgs, clean_files)
 
-                    # Calculate Mahalanobis Distance
-                    if calc_mahalanobis:
-                        st.info("📊 Menghitung Mahalanobis Distance...")
-                        df_mahal = calculate_mahalanobis_distance(clean_imgs, noisy_imgs, denoised_imgs, clean_files, patch_size)
-                        all_results['Mahalanobis Distance'] = df_mahal
-                        st.success("✅ Mahalanobis Distance selesai dihitung")
-                        st.dataframe(df_mahal, use_container_width=True)
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+                    import traceback
+                    st.error(traceback.format_exc())
 
-                    # Calculate FID
-                    if calc_fid:
-                        fid_results = calculate_fid_metric(clean_imgs, noisy_imgs, denoised_imgs)
-                        if fid_results:
-                            df_fid = pd.DataFrame([fid_results])
-                            all_results['FID'] = df_fid
-                            st.success("✅ FID selesai dihitung")
-                            st.dataframe(df_fid, use_container_width=True)
+        else:  # individual files method
+            clean_files_list = upload_data['clean_files']
+            noisy_files_list = upload_data['noisy_files']
+            denoised_files_list = upload_data['denoised_files']
 
-                    # Calculate VIF
-                    if calc_vif:
-                        st.info("📊 Menghitung VIF...")
-                        df_vif = calculate_vif_metric(clean_imgs, noisy_imgs, denoised_imgs, clean_files)
-                        all_results['VIF'] = df_vif
-                        st.success("✅ VIF selesai dihitung")
-                        st.dataframe(df_vif, use_container_width=True)
+            if not (clean_files_list and noisy_files_list and denoised_files_list):
+                st.error("⚠️ Please upload files from all categories (Clean, Noisy, Denoised)")
+            else:
+                try:
+                    st.info("🖼️ Loading images from uploaded files...")
+                    clean_imgs, clean_names = load_dicom_from_files(clean_files_list)
+                    noisy_imgs, noisy_names = load_dicom_from_files(noisy_files_list)
+                    denoised_imgs, denoised_names = load_dicom_from_files(denoised_files_list)
 
-                    # Save results
-                    st.subheader("💾 Download Hasil")
+                    if len(clean_imgs) == 0 or len(noisy_imgs) == 0 or len(denoised_imgs) == 0:
+                        st.error("❌ No valid IMA/DICOM files found")
+                    elif len(clean_imgs) != len(noisy_imgs) or len(clean_imgs) != len(denoised_imgs):
+                        st.error(f"❌ Number or file names are not the same: Clean={len(clean_imgs)}, Noisy={len(noisy_imgs)}, Denoised={len(denoised_imgs)}")
+                    else:
+                        st.success(f"✅ Successfully loaded {len(clean_imgs)} images from each category")
+                        perform_calculations(clean_imgs, noisy_imgs, denoised_imgs, clean_names)
 
-                    for metric_name, df in all_results.items():
-                        csv = df.to_csv(index=False)
-                        st.download_button(
-                            label=f"📥 Download {metric_name} (CSV)",
-                            data=csv,
-                            file_name=f"{metric_name.replace(' ', '_').lower()}_results.csv",
-                            mime="text/csv"
-                        )
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+                    import traceback
+                    st.error(traceback.format_exc())
 
-                    st.success("🎉 Semua perhitungan selesai!")
+def perform_calculations(clean_imgs, noisy_imgs, denoised_imgs, filenames):
+    """Perform all metric calculations"""
+    all_results = {}
 
-            except Exception as e:
-                st.error(f"❌ Error: {str(e)}")
-                import traceback
-                st.error(traceback.format_exc())
+    # Calculate MSE, PSNR, SSIM
+    if calc_mse or calc_psnr or calc_ssim:
+        st.info("📊 Calculating MSE, PSNR, SSIM...")
+        df_basic = calculate_mse_psnr_ssim(clean_imgs, noisy_imgs, denoised_imgs, filenames)
+        all_results['Basic Metrics'] = df_basic
+        st.success("✅ MSE, PSNR, SSIM are calculated")
+        st.dataframe(df_basic, use_container_width=True)
+
+    # Calculate Mahalanobis Distance
+    if calc_mahalanobis:
+        st.info("📊 Calculating Mahalanobis Distance...")
+        df_mahal = calculate_mahalanobis_distance(clean_imgs, noisy_imgs, denoised_imgs, filenames, patch_size)
+        all_results['Mahalanobis Distance'] = df_mahal
+        st.success("✅ Mahalanobis Distance is calculated")
+        st.dataframe(df_mahal, use_container_width=True)
+
+    # Calculate FID
+    if calc_fid:
+        fid_results = calculate_fid_metric(clean_imgs, noisy_imgs, denoised_imgs)
+        if fid_results:
+            df_fid = pd.DataFrame([fid_results])
+            all_results['FID'] = df_fid
+            st.success("✅ FID is calculated")
+            st.dataframe(df_fid, use_container_width=True)
+
+    # Calculate VIF
+    if calc_vif:
+        st.info("📊 Calculating VIF...")
+        df_vif = calculate_vif_metric(clean_imgs, noisy_imgs, denoised_imgs, filenames)
+        all_results['VIF'] = df_vif
+        st.success("✅ VIF is calculated")
+        st.dataframe(df_vif, use_container_width=True)
+
+    # Save results
+    st.subheader("💾 Download Result")
+
+    for metric_name, df in all_results.items():
+        csv = df.to_csv(index=False)
+        st.download_button(
+            label=f"📥 Download {metric_name} (CSV)",
+            data=csv,
+            file_name=f"{metric_name.replace(' ', '_').lower()}_results.csv",
+            mime="text/csv"
+        )
+
+    st.success("🎉 All calculations are complete!")
 
 st.markdown("---")
-st.markdown("📝 **Catatan:** Aplikasi ini menggunakan file IMA/DICOM untuk perhitungan metrik kualitas citra medis.")
-st.markdown("🏫 **Tomsk Polytechnic University** - School of Nuclear Technologies")
+st.markdown("📝 **Note:** This application uses IMA/DICOM files for medical image quality metrics calculations.")
+st.markdown("🏫 **Tomsk Polytechnic University** - School of Nuclear Science and Engineering")
