@@ -42,8 +42,22 @@ st.markdown("""
         border-radius: 10px;
         margin: 1rem 0;
     }
+    .logo-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# Display logo/header image
+try:
+    logo = image.open('TPU_yadernikh.png')
+    col1, col2, col3 = st.columns(3)
+    with col2:
+        st.image(logo, use_container_width=True)
+except:
+    st.warning("⚠️ Logo file not found. Please ensure TPU_yadernikh.jpg is in the same directory.")
 
 st.markdown('<p class="main-header">🔬 Image Quality Metrics Calculator</p>', unsafe_allow_html=True)
 st.markdown("### Medical Image Quality Metrics Evaluation (IMA/DICOM)")
