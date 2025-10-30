@@ -477,17 +477,17 @@ def perform_calculations(clean_imgs, noisy_imgs, denoised_imgs, filenames):
     all_results = {}
     # Kalkulasi MSE, PSNR, SSIM
     if calc_mse or calc_psnr or calc_ssim:
-        st.info("📊 Menghitung MSE, PSNR, SSIM...")
+        st.info("📊 Calculating MSE, PSNR, SSIM...")
         df_basic = calculate_mse_psnr_ssim(clean_imgs, noisy_imgs, denoised_imgs, filenames)
         all_results['Basic Metrics'] = df_basic
-        st.success("✅ MSE, PSNR, SSIM selesai dihitung")
+        st.success("✅ MSE, PSNR, and SSIM are calculated")
         st.dataframe(df_basic, use_container_width=True)
     # Kalkulasi Mahalanobis Distance
     if calc_mahalanobis:
-        st.info("📊 Menghitung Mahalanobis Distance...")
+        st.info("📊 Calculating Mahalanobis Distance...")
         df_mahal = calculate_mahalanobis_distance(clean_imgs, noisy_imgs, denoised_imgs, filenames, patch_size)
         all_results['Mahalanobis Distance'] = df_mahal
-        st.success("✅ Mahalanobis Distance selesai dihitung")
+        st.success("✅ Mahalanobis Distance is calculated")
         st.dataframe(df_mahal, use_container_width=True)
     # Kalkulasi FID
     if calc_fid:
@@ -495,17 +495,17 @@ def perform_calculations(clean_imgs, noisy_imgs, denoised_imgs, filenames):
         if fid_results:
             df_fid = pd.DataFrame([fid_results])
             all_results['FID'] = df_fid
-            st.success("✅ FID selesai dihitung")
+            st.success("✅ FID is calculated")
             st.dataframe(df_fid, use_container_width=True)
     # Kalkulasi VIF
     if calc_vif:
-        st.info("📊 Menghitung VIF...")
+        st.info("📊 Calculating VIF...")
         df_vif = calculate_vif_metric(clean_imgs, noisy_imgs, denoised_imgs, filenames)
         all_results['VIF'] = df_vif
-        st.success("✅ VIF selesai dihitung")
+        st.success("✅ VIF is calculated")
         st.dataframe(df_vif, use_container_width=True)
     # Download hasil
-    st.subheader("💾 Download Hasil")
+    st.subheader("💾 Download Results")
     for metric_name, df in all_results.items():
         csv = df.to_csv(index=False)
         st.download_button(
@@ -514,7 +514,7 @@ def perform_calculations(clean_imgs, noisy_imgs, denoised_imgs, filenames):
             file_name=f"{metric_name.replace(' ', '_').lower()}_results.csv",
             mime="text/csv"
         )
-    st.success("🎉 Semua perhitungan selesai!")
+    st.success("🎉 All calculations are complete!")
 
 # Main calculation
 with tab3:
@@ -618,7 +618,7 @@ def perform_calculations(clean_imgs, noisy_imgs, denoised_imgs, filenames):
         st.dataframe(df_vif, use_container_width=True)
 
     # Save results
-    st.subheader("💾 Download Result")
+    st.subheader("💾 Download Results")
 
     for metric_name, df in all_results.items():
         csv = df.to_csv(index=False)
