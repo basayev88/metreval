@@ -52,7 +52,7 @@ st.markdown("""
 
 # Display logo/header image
 try:
-    logo = image.open('TPU_yadernikh.jpg')
+    logo = Image.open('TPU_yadernikh.jpg')
     col1, col2, col3 = st.columns(3)
     with col2:
         st.image(logo, use_container_width=True)
@@ -68,16 +68,16 @@ with st.sidebar:
     st.markdown("""
     **Steps:**
     1. Upload a ZIP folder containing IMA/DICOM files
-    2. Select the metric you want to calculate
-    3. Click the "Calculate Metrics" button
-    4. Download the calculation results
+    2. Pilih metrik yang ingin dihitung
+    3. Klik tombol "Hitung Metrik"
+    4. Unduh hasil perhitungan
 
-    **File Format:**
-    - Format: .IMA or .dcm (DICOM)
+    **Format File:**
+    - Format: .IMA atau .dcm (DICOM)
     - Folder: Clean, Noisy, Denoised
-    - Make sure the number of files is the same in each folder.
+    - Pastikan jumlah file sama di setiap folder
 
-    **Available metrics:**
+    **Metrik yang tersedia:**
     - MSE (Mean Squared Error)
     - PSNR (Peak Signal-to-Noise Ratio)
     - SSIM (Structural Similarity Index)
@@ -87,35 +87,35 @@ with st.sidebar:
     """)
 
 # Main content
-tab1, tab2, tab3 = st.tabs(["📤 Upload Data", "⚙️ Settings", "📊 Result"])
+tab1, tab2, tab3 = st.tabs(["📤 Upload Data", "⚙️ Pengaturan", "📊 Hasil"])
 
 with tab1:
-    st.subheader("Upload Image Folder (ZIP)")
+    st.subheader("Upload Folder Citra")
     col1, col2, col3 = st.columns(3)
 
     with col1:
         clean_zip = st.file_uploader(
             "Upload Clean Images (ZIP)",
             type=['zip'],
-            help="Upload a ZIP file containing the clean images."
+            help="Upload file ZIP berisi citra clean"
         )
 
     with col2:
         noisy_zip = st.file_uploader(
             "Upload Noisy Images (ZIP)",
             type=['zip'],
-            help="Upload a ZIP file containing the noisy images."
+            help="Upload file ZIP berisi citra noisy"
         )
 
     with col3:
         denoised_zip = st.file_uploader(
             "Upload Denoised Images (ZIP)",
             type=['zip'],
-            help="Upload a ZIP file containing the denoised images."
+            help="Upload file ZIP berisi citra denoised"
         )
 
 with tab2:
-    st.subheader("Select the Metrics to Calculate")
+    st.subheader("Pilih Metrik yang Ingin Dihitung")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -128,10 +128,10 @@ with tab2:
         calc_fid = st.checkbox("FID (Fréchet Inception Distance)", value=False)
         calc_vif = st.checkbox("VIF (Visual Information Fidelity)", value=False)
 
-    st.info("⚠️ Note: FID requires long computation time and large memory.")
+    st.info("⚠️ Catatan: FID memerlukan waktu komputasi yang lama dan memori yang besar")
 
     if calc_mahalanobis:
-        patch_size = st.slider("Patch Size for Mahalanobis Distance", 8, 64, 32, 8)
+        patch_size = st.slider("Ukuran Patch untuk Mahalanobis Distance", 8, 64, 32, 8)
     else:
         patch_size = 32
 
@@ -375,9 +375,9 @@ def calculate_vif_metric(clean_imgs, noisy_imgs, denoised_imgs, filenames):
 
 # Main calculation
 with tab3:
-    if st.button("🚀 Calculate Metrics", type="primary", use_container_width=True):
+    if st.button("🚀 Hitung Metrik", type="primary", use_container_width=True):
         if not (clean_zip and noisy_zip and denoised_zip):
-            st.error("⚠️ Please upload all folders (Clean, Noisy, Denoised)")
+            st.error("⚠️ Mohon upload semua folder (Clean, Noisy, Denoised)")
         else:
             try:
                 st.info("📂 Extracting ZIP files...")
@@ -401,18 +401,18 @@ with tab3:
 
                     # Calculate MSE, PSNR, SSIM
                     if calc_mse or calc_psnr or calc_ssim:
-                        st.info("📊 Calculating MSE, PSNR, SSIM...")
+                        st.info("📊 Menghitung MSE, PSNR, SSIM...")
                         df_basic = calculate_mse_psnr_ssim(clean_imgs, noisy_imgs, denoised_imgs, clean_files)
                         all_results['Basic Metrics'] = df_basic
-                        st.success("✅ MSE, PSNR, SSIM are calculated")
+                        st.success("✅ MSE, PSNR, SSIM selesai dihitung")
                         st.dataframe(df_basic, use_container_width=True)
 
                     # Calculate Mahalanobis Distance
                     if calc_mahalanobis:
-                        st.info("📊 Calculating Mahalanobis Distance...")
+                        st.info("📊 Menghitung Mahalanobis Distance...")
                         df_mahal = calculate_mahalanobis_distance(clean_imgs, noisy_imgs, denoised_imgs, clean_files, patch_size)
                         all_results['Mahalanobis Distance'] = df_mahal
-                        st.success("✅ Mahalanobis Distance is calculated")
+                        st.success("✅ Mahalanobis Distance selesai dihitung")
                         st.dataframe(df_mahal, use_container_width=True)
 
                     # Calculate FID
@@ -421,19 +421,19 @@ with tab3:
                         if fid_results:
                             df_fid = pd.DataFrame([fid_results])
                             all_results['FID'] = df_fid
-                            st.success("✅ FID is calculated")
+                            st.success("✅ FID selesai dihitung")
                             st.dataframe(df_fid, use_container_width=True)
 
                     # Calculate VIF
                     if calc_vif:
-                        st.info("📊 Calculating VIF...")
+                        st.info("📊 Menghitung VIF...")
                         df_vif = calculate_vif_metric(clean_imgs, noisy_imgs, denoised_imgs, clean_files)
                         all_results['VIF'] = df_vif
-                        st.success("✅ VIF is calculated")
+                        st.success("✅ VIF selesai dihitung")
                         st.dataframe(df_vif, use_container_width=True)
 
                     # Save results
-                    st.subheader("💾 Download Results")
+                    st.subheader("💾 Download Hasil")
 
                     for metric_name, df in all_results.items():
                         csv = df.to_csv(index=False)
@@ -444,7 +444,7 @@ with tab3:
                             mime="text/csv"
                         )
 
-                    st.success("🎉 All calculation done!")
+                    st.success("🎉 Semua perhitungan selesai!")
 
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
@@ -452,4 +452,5 @@ with tab3:
                 st.error(traceback.format_exc())
 
 st.markdown("---")
-st.markdown("📝 **Note:** This application uses IMA/DICOM files for medical image quality metrics calculation.")
+st.markdown("📝 **Catatan:** Aplikasi ini menggunakan file IMA/DICOM untuk perhitungan metrik kualitas citra medis.")
+st.markdown("🏫 **Tomsk Polytechnic University** - School of Nuclear Technologies")
