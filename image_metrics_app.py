@@ -52,7 +52,7 @@ st.markdown("""
 
 # Display logo/header image
 try:
-    logo = image.open('TPU_yadernikh.png')
+    logo = image.open('TPU_yadernikh.jpg')
     col1, col2, col3 = st.columns(3)
     with col2:
         st.image(logo, use_container_width=True)
@@ -73,7 +73,7 @@ with st.sidebar:
     4. Download the calculation results
 
     **File Format:**
-    - Format: .IMA atau .dcm (DICOM)
+    - Format: .IMA or .dcm (DICOM)
     - Folder: Clean, Noisy, Denoised
     - Make sure the number of files is the same in each folder.
 
@@ -128,7 +128,7 @@ with tab2:
         calc_fid = st.checkbox("FID (Fréchet Inception Distance)", value=False)
         calc_vif = st.checkbox("VIF (Visual Information Fidelity)", value=False)
 
-    st.info("⚠️ Catatan: FID requires long computation time and large memory.")
+    st.info("⚠️ Note: FID requires long computation time and large memory.")
 
     if calc_mahalanobis:
         patch_size = st.slider("Patch Size for Mahalanobis Distance", 8, 64, 32, 8)
