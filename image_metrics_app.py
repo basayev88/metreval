@@ -394,17 +394,17 @@ def calculate_fid_metric(clean_imgs, noisy_imgs, denoised_imgs):
 
                 # Save images as PNG
                 for i, img in enumerate(clean_imgs):
-                    img_norm = (img - img.min()) / (img.max() - img.min())
+                    img_norm = img / 255.0
                     pil_img = Image.fromarray((img_norm * 255).astype(np.uint8))
                     pil_img.save(os.path.join(temp_clean_dir, f'image_{i}.png'))
 
                 for i, img in enumerate(noisy_imgs):
-                    img_norm = (img - img.min()) / (img.max() - img.min())
+                    img_norm = img / 255.0
                     pil_img = Image.fromarray((img_norm * 255).astype(np.uint8))
                     pil_img.save(os.path.join(temp_noisy_dir, f'image_{i}.png'))
 
                 for i, img in enumerate(denoised_imgs):
-                    img_norm = (img - img.min()) / (img.max() - img.min())
+                    img_norm = img / 255.0
                     pil_img = Image.fromarray((img_norm * 255).astype(np.uint8))
                     pil_img.save(os.path.join(temp_denoised_dir, f'image_{i}.png'))
 
